@@ -1,10 +1,10 @@
 let categories = [];
 
-
+// gets 6 random category ids and returns them in an array
 getCategoryIds= async () => {
     try {
         const res = await axios.get('https://jservice.io/api/categories?count=100');
-        const categoryId = res.data.filter(obj => obj.clues_count > 4).map(filtered => filtered.id);
+        const categoryId = res.data.filter(obj => obj.clues_count > 5).map(filtered => filtered.id);
         const NUM_CATEGORIES = _.sampleSize(categoryId, 6);
         return NUM_CATEGORIES;
     } catch (err) {
@@ -12,7 +12,8 @@ getCategoryIds= async () => {
     }
 }
 
-
+// returns categories array having 6 objects like: {title: 'all numbers', cluesArray: Array(6)}
+// where cluesArray has 6 objects like: {id: 298, answer: '640', question: 'The number of acres in a square mile', showing: null}
 getCategory = async (catId) => {
     let idArr = await(catId);
 
@@ -22,43 +23,47 @@ getCategory = async (catId) => {
             let res = await axios.get(`https://jservice.io/api/category?id=${genre}`);
             
             let {title, clues} = res.data;
+            
             let cluesArray = _.sampleSize(clues.map((clue) => ({
                 id: clue.id,
                 answer: clue.answer,
                 question: clue.question,
                 showing: null
             })
-            ), 6);
+            ), 5);
+            
             categories.push({title,cluesArray});
         }
 
     }catch(err){
         console.log(err)
     }
-    
     return categories
 }
 
 
 const fillTable = async () => {
-    
+    await getCategory(getCategoryIds());
     
     const $board = $('#board');
     const $headings = $("<thead>");
     const $tbody = $("<tbody>");
-    const content = await getCategory(getCategoryIds());
-    $headings.append($("<tr class='category-titles'></tr>").append(content.map(el => $("<th>").text(el.title))));
-  
+    const clues = categories.map(cat => cat.cluesArray);
+ 
+    // fills Titles in the thead
+    $headings.append($("<tr class='category-titles'></tr>").append(categories.map(el => $("<th>").text(el.title))));
     
-    for(let j = 0; j < content.length - 1 ; j++){
-        let $tr = $("<tr>")
-        for(let k = 0; k < content[j].cluesArray.length; k++){
-            $tr.append($("<td>?</td>").attr("id", `${content[j].cluesArray[k].id}`))
+    // creates 5 tbody rows
+    for(let  i = 0; i < categories.length -1 ;  i++){
+        let $tr = $("<tr>");
+
+        // fills tds with ?
+        for(let j = 0; j < clues.length; j++){
+            $tr.append($("<td>?</td>").attr("id", `${clues[j][i]['id']}`))
         }
         $tbody.append($tr)
         }
     $board.append($headings, $tbody);
-    $("#board tbody").on('click', handleClick);
    };
 
 
@@ -71,14 +76,27 @@ const fillTable = async () => {
  * */
 
 handleClick = async (evt) => {
-    const content = await getCategory(getCategoryIds());
-
-    for(let {title, cluesArray} of content){
-        console.log(cluesArray)
-    }
     
-}
+    console.log(evt.target);
 
+    // for(let {title, cluesArray} of content){
+    //     for(let indClues of cluesArray){
+    //         let {id, question, answer, showing} = indClues;
+    //         console.log('1- id: ' + id, "2- question: " + question,'3- answer: ' + answer);
+
+    //         if(!showing){
+    //             $(this).text(question);
+    //             showing = 'question';
+    //         } else if (showing === 'question'){
+    //             evt.target.text(answer);
+    //             showing = 'answer';
+    //         } else {
+    //             return; //should remove event listener
+    //         }
+    //     }
+    // }
+}
+$("#board").on('click', handleClick);
 /** Wipe the current Jeopardy board, show the loading spinner,
  * and update the button used to fetch data.
  */
