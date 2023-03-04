@@ -12,8 +12,7 @@ getCategoryIds= async () => {
     }
 }
 
-// returns categories array having 6 objects like: {title: 'all numbers', cluesArray: Array(6)}
-// where cluesArray has 6 objects like: {id: 298, answer: '640', question: 'The number of acres in a square mile', showing: null}
+// returns categories array having 6 objects
 getCategory = async (catId) => {
     let idArr = await(catId);
 
@@ -51,10 +50,10 @@ const fillTable = async () => {
     const clues = categories.map(cat => cat.cluesArray);
  
     // fills Titles in the thead
-    $headings.append($("<tr class='category-titles'></tr>").append(categories.map(el => $("<th>").text(el.title))));
+    $headings.append($("<tr class='category-titles'></tr>").append(categories.map(el => $("<th>").text(el.title.toUpperCase()))));
     
     // creates 5 tbody rows
-    for(let  i = 0; i < categories.length -1 ;  i++){
+    for(let  i = 0; i < 5 ;  i++){
         let $tr = $("<tr>");
 
         // fills tds with ?
@@ -64,67 +63,49 @@ const fillTable = async () => {
         $tbody.append($tr)
         }
     $board.append($headings, $tbody);
+
    };
 
-
-/** Handle clicking on a clue: show the question or answer.
- *
- * Uses .showing property on clue to determine what to show:
- * - if currently null, show question & set .showing to "question"
- * - if currently "question", show answer & set .showing to "answer"
- * - if currently "answer", ignore click
- * */
-
 handleClick = async (evt) => {
+
+    const clickedClueId = Number(evt.target.id);
+    const categoryWithClue = categories.find(category =>
+      category.cluesArray.some(clue => clue.id === clickedClueId)
+    );
+  
+    if (!categoryWithClue) {
+      return;
+    }
+  
+    const clickedClue = categoryWithClue.cluesArray.find(clue => clue.id === clickedClueId);
     
-    console.log(evt.target);
+    if (clickedClue.showing === null) {
+      $(evt.target).text(clickedClue.question);
+      clickedClue.showing = 'question';
+    } else if (clickedClue.showing === 'question') {
+      $(evt.target).text(clickedClue.answer);
+      clickedClue.showing = 'answer';
+    }
+  }; 
 
-    // for(let {title, cluesArray} of content){
-    //     for(let indClues of cluesArray){
-    //         let {id, question, answer, showing} = indClues;
-    //         console.log('1- id: ' + id, "2- question: " + question,'3- answer: ' + answer);
+const showLoadingView = () => {
+    $('table').empty();
+    $("#spinner").css({"display": "block", "animation-play-state": "running !important"});
+    
+};
 
-    //         if(!showing){
-    //             $(this).text(question);
-    //             showing = 'question';
-    //         } else if (showing === 'question'){
-    //             evt.target.text(answer);
-    //             showing = 'answer';
-    //         } else {
-    //             return; //should remove event listener
-    //         }
-    //     }
-    // }
-}
+const hideLoadingView = () => {
+    $("#spinner").css({"display": "none", "animation-play-state": "paused !important"});
+    $('#start-game').text('Restart Game');
+};
+
+
+const setupAndStart = async() => {
+    categories = [];
+    showLoadingView();
+    await fillTable();
+    hideLoadingView();
+};
+
+$("#start-game").on('click', setupAndStart);
 $("#board").on('click', handleClick);
-/** Wipe the current Jeopardy board, show the loading spinner,
- * and update the button used to fetch data.
- */
-
-function showLoadingView() {
-    // how to show loading spinner
-    // game board .empty()
-}
-
-/** Remove the loading spinner and update the button used to fetch data. */
-
-function hideLoadingView() {
-}
-
-/** Start game:
- *
- * - get random category Ids
- * - get data for each category
- * - create HTML table
- * */
-
-async function setupAndStart() {
-}
-
-/** On click of start / restart button, set up game. */
-
-// TODO
-
-/** On page load, add event handler for clicking clues */
-
-// TODO
